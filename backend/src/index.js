@@ -30,6 +30,8 @@ app.post('/', (req, res) => {
     res.json(req.body);
 });
 
+app.use('/users', require('./routes/users'));
+
 app.use((err, req, res, next) => {
     res.status(err.status || 500);
     res.send(err.message || 'server error!');
