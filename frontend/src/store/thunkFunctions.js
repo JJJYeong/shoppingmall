@@ -88,3 +88,55 @@ export const addToCart = createAsyncThunk(
         }
     }
 )
+
+export const getCartItems = createAsyncThunk(
+    //장바구니 목록
+    "user/getCartItems",
+    async ({cartItemIds, userCart}, thunkAPI) => {
+        try {
+            const res = await axiosInstance.get(
+                `/products/${cartItemIds}?type=array`
+            )
+
+            userCart.forEach(cartItem => {
+                res.data.forEach((productDetail, idx) => {
+                    if(cartItem.id === productDetail._id) {
+                        res.data[idx].quantity = cartItem.quantity;
+                    }
+                });
+            });
+
+            return res.data;
+
+        } catch (error) {
+            console.log(error);
+            return thunkAPI.rejectWithValue(error.response.data || error.message);
+        }
+    }
+)
+
+export const removeCartItem = createAsyncThunk(
+    //장바구니 삭제
+    "user/removeCartItem",
+    async (productId, thunkAPI) => {
+        try {
+            const res = await axiosInstance.delete(
+                `/users/cart?productId=${productId}`
+            )
+
+            res.data.cart.forEach(cartItem => {
+                res.data.productInfo.forEach((productDetail, idx) => {
+                    if(cartItem.id === productDetail._id) {
+                        res.data.productInfo[idx].quantity = cartItem.quantity;
+                    }
+                });
+            });
+
+            return res.data;
+
+        } catch (error) {
+            console.log(error);
+            return thunkAPI.rejectWithValue(error.response.data || error.message);
+        }
+    }
+)

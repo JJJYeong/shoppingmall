@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
+const Product = require('../models/Product');
 
 router.post('/register', async(req, res, next) => {
     //회원가입
@@ -99,6 +100,34 @@ router.post('/cart', auth, async(req, res, next) => {
 
             return res.status(201).send(user.cart);
         }
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.delete('/cart', auth, async(req, res, next) => {
+    //장바구니 삭제
+    try {
+        //cart 내 상품 지우기
+        const userInfo = await User.findOneAndUpdate(
+            {_id: req.user._id},
+            {$pull: {
+                cart: {
+                    id: req.query.productId
+                }
+            }},
+            {new: true}
+        )
+
+        const cart = userInfo.cart;
+        const array = cart.map(item => {
+            return item.id
+        });
+
+        const productInfo = await Product.find({_id: {$in: array}}).populate('writer');
+
+        return res.status(200).json({productInfo, cart});
 
     } catch (error) {
         next(error);

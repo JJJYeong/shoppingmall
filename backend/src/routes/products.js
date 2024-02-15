@@ -88,6 +88,14 @@ router.get('/:id', auth, async(req, res, next) => {
     const type = req.query.type;
     let productIds = req.params.id;
 
+    if(type === "array") {
+        //장바구니 목록에서 상품정보 가져올 때 id 배열로 세팅
+        let ids = productIds.split(',');
+        productIds = ids.map(item => {
+            return item;
+        })
+    }
+
     try {
         const product = await Product.find({_id: {$in: productIds}}).populate('writer');
         return res.status(200).send(product);
