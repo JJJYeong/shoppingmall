@@ -4,6 +4,9 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const Product = require('../models/Product');
+const Payment = require('../models/Payment');
+const uuid = require('uuid');
+const async = require('async');
 
 router.post('/register', async(req, res, next) => {
     //회원가입
@@ -128,6 +131,70 @@ router.delete('/cart', auth, async(req, res, next) => {
         const productInfo = await Product.find({_id: {$in: array}}).populate('writer');
 
         return res.status(200).json({productInfo, cart});
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post('/payment', auth, async(req, res, next) => {
+    //결제
+    try {
+        let history = [];
+        let transactionData = {};
+
+        req.body.cartDetail.forEach((item) => {
+            history.push({
+                dateOfPurchase: new Date().toISOString(),
+                name: item.title,
+                id: item._id,
+                price: item.price,
+                quantity: item.quantity,
+                paymentId: uuid.v4()
+            });
+        });
+
+        console.log("asdf")
+
+        transactionData.user = {
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.email
+        };
+        transactionData.product = history;
+
+        await User.findOneAndUpdate(
+            {_id: req.user._id},
+            {$push: {
+                history: {
+                    $each: history
+                }
+            }, $set: {
+                cart: []
+            }}
+        )
+
+        const payment = new Payment(transactionData);
+        const paymentDoc = await payment.save();
+
+        let products = [];
+        paymentDoc.product.forEach(item => {
+            products.push({id: item.id, quantity: item.quantity});
+        });
+
+        async.eachSeries(products, async (item) => {
+            await Product.updateOne(
+                {_id: item.id},
+                {$inc: {
+                    sold: item.quantity
+                }}
+            )
+        }, (err) => {
+            if(err) {
+                return res.status(500).send(err);
+            }
+            return res.sendStatus(200);
+        });
 
     } catch (error) {
         next(error);
