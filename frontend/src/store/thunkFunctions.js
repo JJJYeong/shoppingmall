@@ -70,3 +70,21 @@ export const logoutUser = createAsyncThunk(
         }
     }
 )
+
+export const addToCart = createAsyncThunk(
+    //장바구니 담기
+    "user/addToCart",
+    async (body, thunkAPI) => {
+        try {
+            const res = await axiosInstance.post(
+                `/users/cart`,
+                body
+            )
+            return res.data;
+
+        } catch (error) {
+            console.log(error);
+            return thunkAPI.rejectWithValue(error.response.data || error.message);
+        }
+    }
+)

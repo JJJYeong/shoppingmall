@@ -83,4 +83,18 @@ router.get('/', async(req, res, next) => {
     }
 });
 
+router.get('/:id', auth, async(req, res, next) => {
+    //상품상세 가져오기
+    const type = req.query.type;
+    let productIds = req.params.id;
+
+    try {
+        const product = await Product.find({_id: {$in: productIds}}).populate('writer');
+        return res.status(200).send(product);
+
+    } catch (error) {
+        next(error);
+    }
+});
+
 module.exports = router
